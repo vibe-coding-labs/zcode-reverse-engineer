@@ -1,0 +1,34 @@
+{
+  "name": "zcode-reverse-engineer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ZCode reverse engineering & reverse proxy for AI capabilities",
+  "type": "module",
+  "main": "dist/cli.js",
+  "scripts": {
+    "build": "tsc",
+    "login": "node dist/cli.js login",
+    "ask": "node dist/cli.js ask",
+    "proxy": "node dist/cli.js proxy",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "commander": "^13.0.0",
+    "express": "^5.1.0",
+    "http-graceful-shutdown": "^3.1.0",
+    "open": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vibe-coding-labs/zcode-reverse-engineer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+__pycache__/
+*.pyc
+data/
+.zcode_credentials.json
+*.log
+.env
