@@ -54,7 +54,11 @@ export function loadCredentials(): ZCodeCredentials | null {
  * Save credentials to disk
  */
 export function saveCredentials(creds: ZCodeCredentials): void {
-  fs.writeFileSync(CRED_PATH, JSON.stringify(creds, null, 2), "utf-8");
+  // Secure write: 0600 permissions (owner read/write only)
+  const tmp = CRED_PATH + ".tmp." + process.pid;
+  fs.writeFileSync(tmp, JSON.stringify(creds, null, 2), "utf-8");
+  fs.chmodSync(tmp, 0o600);
+  fs.renameSync(tmp, CRED_PATH);
   console.log(`✓ Credentials saved to ${CRED_PATH}`);
 }
 

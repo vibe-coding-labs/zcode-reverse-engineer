@@ -72,7 +72,6 @@ export async function startProxyServer(
   const server = app.listen(port, host, () => {
     console.log(`\n🔁 ZCode Reverse Proxy running on http://${host}:${port}`);
     console.log(`   Target: ${PROXY_TARGET}`);
-    console.log(`   JWT: ${creds.zcodeJwtToken.slice(0, 20)}...${creds.zcodeJwtToken.slice(-10)}`);
     console.log(`\n   Usage examples:\n`);
     console.log(`   ANTHROPIC_BASE_URL=http://${host}:${port} claude`);
     console.log(`   curl http://${host}:${port}/v1/messages -H "Content-Type: application/json" -d '{...}'`);

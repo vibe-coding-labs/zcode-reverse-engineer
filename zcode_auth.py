@@ -14,7 +14,7 @@ Additional modes:
 import http.server
 import json
 import os
-import random
+import secrets
 import socket
 import string
 import sys
@@ -52,7 +52,7 @@ CREDENTIALS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".zc
 # ─── Helpers ─────────────────────────────────────────────────────────────
 
 def generate_state(length=32):
-    return "".join(random.choices(string.hexdigits, k=length))
+    return "".join(secrets.choice(string.hexdigits) for _ in range(length))
 
 
 def http_request(url, method="GET", body=None, headers=None, timeout=30):
@@ -98,8 +98,9 @@ def load_credentials():
 
 
 def save_credentials(creds):
-    """Save credentials to JSON file."""
-    with open(CREDENTIALS_FILE, "w") as f:
+    """Save credentials to JSON file with secure permissions (0600)."""
+    fd = os.open(CREDENTIALS_FILE, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
         json.dump(creds, f, indent=2, ensure_ascii=False)
     print(f"  ✓ Credentials saved to {CREDENTIALS_FILE}")
 
