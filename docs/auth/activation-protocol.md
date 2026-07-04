@@ -68,16 +68,16 @@ sequenceDiagram
             "plan_id": "zai-start-plan",
             "name": "Start Plan",
             "status": "active",
-            "total_units": 100,
-            "used_units": 30,
+            "total_units": 3000000,
+            "used_units": 0,
             "available_units": 70,
             "period_end": 1718400000,
             "capabilities": ["model:glm-5.1", "model:glm-5-turbo"]
         }],
         "balances": [{
             "entitlement_id": "model_usage",
-            "total_units": 100,
-            "used_units": 30,
+            "total_units": 3000000,
+            "used_units": 0,
             "available_units": 70
         }]
     }
