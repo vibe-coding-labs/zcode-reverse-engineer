@@ -29,7 +29,9 @@ export default defineConfig({
           { text: '协议总览', link: '/protocol/overview' },
           { text: 'AI 通信协议', link: '/protocol/ai-protocol' },
           { text: 'ACP 代理运行时', link: '/protocol/acp-proxy' },
-          { text: 'WebSocket 管道', link: '/protocol/websocket-pipeline' },
+          { text: 'WebSocket 流式管道', link: '/protocol/websocket-pipeline' },
+          { text: '远程工作区', link: '/protocol/remote-workspace' },
+          { text: 'Agent 运行时', link: '/protocol/agent-runtime' },
         ],
       },
       {
