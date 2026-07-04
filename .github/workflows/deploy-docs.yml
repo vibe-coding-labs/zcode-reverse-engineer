@@ -1,13 +1,8 @@
-name: Deploy MkDocs to GitHub Pages
+name: Deploy VitePress site to Pages
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'docs/**'
-      - 'mkdocs.yml'
-      - 'ANALYSIS_REPORT.md'
+    branches: [main, master]
   workflow_dispatch:
 
 permissions:
@@ -16,41 +11,26 @@ permissions:
   id-token: write
 
 concurrency:
-  group: "pages"
+  group: pages
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: '3.x'
-
+          node-version: 20
+          cache: npm
       - name: Install dependencies
-        run: |
-          pip install mkdocs mkdocs-material
-
-      - name: Build site
-        run: |
-          # Copy root analysis report to docs if not already there
-          cp ANALYSIS_REPORT.md docs/ANALYSIS_REPORT.md 2>/dev/null || true
-          mkdocs build --strict
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        run: npm ci
+      - name: Build VitePress
+        run: npm run docs:build
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
         with:
-          path: site
-
+          path: docs/.vitepress/dist
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

@@ -7,59 +7,64 @@
 
 ---
 
-## 目录
-
-1. [架构概述](#1-架构概述)
-2. [前置条件](#2-前置条件)
-3. [Step 1: 生成授权链接](#3-step-1-生成授权链接)
-4. [Step 2: 用户授权（浏览器交互）](#4-step-2-用户授权浏览器交互)
-5. [Step 3: 提取授权码](#5-step-3-提取授权码)
-6. [Step 4: 授权码 → Access Token](#6-step-4-授权码--access-token)
-7. [Step 5: Access Token → ZCode JWT](#7-step-5-access-token--zcode-jwt)
-8. [Step 6: 获取用户信息](#8-step-6-获取用户信息)
-9. [Step 7: 检查套餐和配额](#9-step-7-检查套餐和配额)
-10. [完整 curl 命令链](#10-完整-curl-命令链)
-11. [常见问题](#11-常见问题)
-12. [Python 脚本使用指南](#12-python-脚本使用指南)
-
----
-
 ## 1. 架构概述
 
 ZCode 使用 **OAuth 2.0 授权码模式（Authorization Code Grant）** 进行身份认证，无 PKCE，无 client_secret。
 
-```
-┌──────────┐    ① 授权链接      ┌─────────────┐
-│  用户     │◄──────────────────│  本机脚本     │
-│ (浏览器)  │                    │ (CLI/无头)    │
-│          │── ② 登录授权 ──►   │              │
-│          │                    │              │
-│          │── ③ 回调 URL ──►  │              │
-└──────────┘                    └──────┬───────┘
-                                       │
-                          ┌────────────┼──────────────┐
-                          │            │              │
-                    ④ Token       ⑤ Business       ⑥ User
-                    Exchange       Token Swap       Info
-                          │            │              │
-                    ┌─────▼────┐ ┌────▼────┐  ┌────▼────┐
-                    │zcode.z.ai│ │api.z.ai │  │chat.z.ai│
-                    │/oauth/   │ │/auth/   │  │/oauth/  │
-                    │token     │ │z/login  │  │userinfo │
-                    └──────────┘ └─────────┘  └─────────┘
+### 认证流程图
+
+```mermaid
+sequenceDiagram
+    actor User as 用户
+    participant Script as 本机脚本 (CLI)
+    participant Chat as chat.z.ai
+    participant ZCode as zcode.z.ai
+    participant API as api.z.ai
+
+    Note over Script: 1. 生成随机 state
+    Script->>Chat: 2. 打开授权链接
+    User->>Chat: 3. 手机号 + 验证码登录
+    Chat-->>Script: 4. 回调 URL (含 code)
+    Note over Script: 5. 提取 authorization code
+
+    Script->>ZCode: 6. POST /api/v1/oauth/token
+    Note over ZCode: 交换 access_token
+    ZCode-->>Script: access_token
+
+    Script->>API: 7. POST /api/auth/z/login
+    Note over API: 交换 Business JWT
+    API-->>Script: ZCode JWT (zcodejwttoken)
+
+    Script->>Chat: 8. GET /oauth/userinfo
+    Chat-->>Script: 用户信息
 ```
 
-### 认证凭据层级
+### 凭据层级
 
-```
-chat.z.ai OAuth Access Token
-        │
-        ▼
-ZCode Business JWT Token (zcodejwttoken)
-        │
-        ├── API 调用 (x-api-key 或 Bearer)
-        ├── Start Plan / Coding Plan 配额查询
-        └── 计费信息获取
+```mermaid
+graph TB
+    subgraph Source["Token 来源"]
+        OA["① POST /api/v1/oauth/token<br/>→ data.zai.access_token"]
+        BJ["② POST /api/auth/z/login<br/>→ data.access_token"]
+    end
+
+    subgraph Tokens["认证凭据"]
+        AT["OAuth Access Token<br/>(chat.z.ai 签发)"]
+        JWT["ZCode Business JWT<br/>(zcodejwttoken)"]
+    end
+
+    subgraph Usage["用途"]
+        UI["用户信息查询<br/>Authorization: Bearer"]
+        AI["AI API 调用<br/>x-api-key: JWT"]
+        BILL["套餐/计费查询<br/>Authorization: Bearer"]
+    end
+
+    OA --> AT
+    AT --> BJ
+    BJ --> JWT
+    AT --> UI
+    JWT --> AI
+    JWT --> BILL
 ```
 
 ---
@@ -121,14 +126,27 @@ params = {
 auth_url = f"https://chat.z.ai/api/oauth/authorize?{urllib.parse.urlencode(params)}"
 ```
 
-### 3.3 最终 URL 示例
+### 3.3 Token 交换流程图
 
-```
-https://chat.z.ai/api/oauth/authorize
-  ?response_type=code
-  &client_id=client_P8X5CMWmlaRO9gyO-KSqtg
-  &redirect_uri=http%3A%2F%2F127.0.0.1%3A9999%2Fcallback
-  &state=Cc1dC2C219a18ABEF9E6a02ACf6967bA
+```mermaid
+sequenceDiagram
+    participant Script as CLI 脚本
+    participant Browser as 浏览器
+    participant Server as chat.z.ai
+
+    Note over Script: state = "Cc1dC2C219..."
+    Script->>Script: 启动本地 HTTP 服务器 (随机端口)
+    Script-->>Browser: 打开授权链接
+    Browser->>Server: GET /api/oauth/authorize
+    Note over Server: ?response_type=code<br/>&client_id=...<br/>&state=...
+    Server-->>Browser: 登录页
+    Browser-->>Browser: 用户输入手机号 + 验证码
+    Browser->>Server: POST 登录
+    Server-->>Browser: 302 重定向
+    Note over Browser: 跳转到 redirect_uri<br/>http://127.0.0.1:9999/callback?code=xxx&state=yyy
+    Browser->>Script: 回调请求
+    Script->>Script: 验证 state 匹配
+    Note over Script: code = "code-d305b6b2ad8d"
 ```
 
 ---
@@ -139,9 +157,14 @@ https://chat.z.ai/api/oauth/authorize
 
 ### 4.1 登录流程
 
-1. 打开链接 → 跳转到 `chat.z.ai` 登录页
-2. 输入手机号 → 接收短信验证码 → 登录
-3. 确认授权 → 浏览器会重定向到 `redirect_uri`
+```mermaid
+flowchart LR
+    A["打开授权链接"] --> B["跳转到 chat.z.ai 登录页"]
+    B --> C["输入手机号"]
+    C --> D["接收短信验证码"]
+    D --> E["确认授权"]
+    E --> F["浏览器重定向<br/>到 redirect_uri"]
+```
 
 ### 4.2 授权后回调
 
@@ -158,6 +181,16 @@ http://127.0.0.1:9999/callback?code=code-d305b6b2ad8d&state=Cc1dC2C219a18ABEF9E6
 ### 4.3 重要: 授权码有效期
 
 OAuth 授权码（`code`）**有效期极短（通常 1-5 分钟）**，拿到后应立即进行下一步 Token 交换。
+
+```mermaid
+timeline
+    title 授权码生命周期
+    第 0 秒 : 生成授权链接
+    第 1-30 秒 : 用户打开链接登录
+    第 30-60 秒 : 授权成功获得 code
+    第 60-120 秒 : code 有效期 (1-5 分钟)
+    第 120+ 秒 : code 过期 → 必须重新授权
+```
 
 ---
 
@@ -184,6 +217,20 @@ if state != original_state:
 ---
 
 ## 6. Step 4: 授权码 → Access Token
+
+```mermaid
+sequenceDiagram
+    participant Script as CLI 脚本
+    participant ZCode as zcode.z.ai
+    participant Chat as chat.z.ai
+
+    Script->>ZCode: POST /api/v1/oauth/token
+    Note over Script: {provider: "zai",<br/>code: "...",<br/>redirect_uri: "...",<br/>state: "..."}
+    ZCode->>Chat: 验证 code 有效性
+    Chat-->>ZCode: code 有效
+    ZCode-->>Script: {data: {zai: {access_token: "..."}}}
+    Note over Script: 保存 access_token
+```
 
 ### 6.1 请求
 
@@ -228,28 +275,26 @@ HTTP-Referer: https://zcode.z.ai
 | `access_token` | OAuth Access Token (JWT 格式) |
 | `refresh_token` | 本次未返回 refresh_token |
 | `expires_in` | 本次未返回（服务器决定） |
-| `code=0` / `success=true` | 业务成功标志 |
-
-### 6.4 curl 命令
-
-```bash
-curl -s -X POST "https://zcode.z.ai/api/v1/oauth/token" \
-  -H "Content-Type: application/json" \
-  -H "User-Agent: ZCode/unknown" \
-  -H "HTTP-Referer: https://zcode.z.ai" \
-  -d '{
-    "provider": "zai",
-    "code": "code-d305b6b2ad8d",
-    "redirect_uri": "http://127.0.0.1:9999/callback",
-    "state": "Cc1dC2C219a18ABEF9E6a02ACf6967bA"
-  }'
-```
 
 ---
 
 ## 7. Step 5: Access Token → ZCode JWT
 
 这是最关键的一步——将 OAuth Access Token 交换为 ZCode 的 Business Token (JWT)。
+
+```mermaid
+sequenceDiagram
+    participant Script as CLI 脚本
+    participant API as api.z.ai
+
+    Script->>API: POST /api/auth/z/login
+    Note over Script: {token: "eyJ...access_token..."}
+    API->>API: 验证 access_token
+    API-->>Script: {data: {access_token: "eyJ...JWT..."}}
+    Note over Script: 保存 zcode_jwt_token
+    Script->>Script: 解码 JWT payload
+    Note over Script: user_id = 8009570<br/>user_type = PERSONAL<br/>channel = Z_AI
+```
 
 ### 7.1 请求
 
@@ -271,7 +316,7 @@ HTTP-Referer: https://zcode.z.ai
     "code": 0,
     "msg": "Operation successful",
     "data": {
-        "access_token": "eyJhbGciOiJIUzUxMiJ9.eyJ1c2VyX3R5cGUiOiJQRVJTT05BTCIsInVzZXJfaWQiOjgwMDk1NzAs...",
+        "access_token": "eyJhbGciOiJIUzUxMiJ9.eyJ1c2Vy...",
         "expires_in": null
     },
     "success": true
@@ -284,20 +329,15 @@ HTTP-Referer: https://zcode.z.ai
 {
     "user_type": "PERSONAL",
     "user_id": 8009570,
-    "api_key": null,
     "user_key": "9da56b95-8b63-43ca-86e7-1ed0a39d1de8",
     "customer_id": "49761776504527802",
-    "username": null,
     "customer": {
         "id": 8009570,
         "createTime": "2026-04-18 17:28:48",
         "enableStatus": "ENABLE",
         "customerNumber": 49761776504527802,
         "userType": "PERSONAL",
-        "source": "默认",
         "channel": "Z_AI",
-        "acType": "NOT_AC",
-        "acState": "NOT_AC",
         "betaTester": false
     }
 }
@@ -313,22 +353,20 @@ curl -H "x-api-key: <JWT>" https://api.z.ai/api/anthropic/v1/messages
 curl -H "Authorization: Bearer <JWT>" https://api.z.ai/api/biz/subscription/list
 ```
 
-### 7.5 curl 命令
-
-```bash
-# 提取 access_token（先保存到变量）
-ACCESS_TOKEN="<从第4步获取>"
-
-curl -s -X POST "https://api.z.ai/api/auth/z/login" \
-  -H "Content-Type: application/json" \
-  -H "User-Agent: ZCode/unknown" \
-  -H "HTTP-Referer: https://zcode.z.ai" \
-  -d "{\"token\": \"$ACCESS_TOKEN\"}"
-```
-
 ---
 
 ## 8. Step 6: 获取用户信息
+
+```mermaid
+sequenceDiagram
+    participant Script as CLI 脚本
+    participant Chat as chat.z.ai
+
+    Script->>Chat: GET /api/oauth/userinfo
+    Note over Script: Authorization: Bearer access_token
+    Chat-->>Script: {sub, name, email, picture}
+    Note over Script: User: CC11001100<br/>Email: cc11001100@qq.com
+```
 
 ### 8.1 请求
 
@@ -356,7 +394,20 @@ Authorization: Bearer <access_token>
 
 ## 9. Step 7: 检查套餐和配额
 
-认证完成后可以查询账号的套餐状态和配额。
+```mermaid
+flowchart TB
+    A["JWT 获取成功"] --> B["查询 Coding Plan 订阅"]
+    B --> C{"subscription/list 有数据?"}
+    C -->|有| D["Coding Plan 已订阅"]
+    C -->|空| E["查询 Start Plan 权益"]
+    E --> F{"billing/current<br/>plans[].status === active?"}
+    F -->|是| G["Start Plan 可用"]
+    F -->|否| H["无可用套餐"]
+
+    D --> I["查询配额:<br/>/monitor/usage/quota/limit"]
+    G --> I
+    H --> J["提示: coding_plan_not_entitled"]
+```
 
 ### 9.1 查询 Coding Plan 订阅
 
@@ -391,31 +442,15 @@ Authorization: Bearer <JWT>
 }
 ```
 
-### 9.3 查询 Start Plan 配额（可靠性待验证）
+### 9.3 AI API 测试结果
 
-Start Plan 的计费端点通过环境变量 `zcodePlanBillingCurrentUrl` 配置，默认指向:
-
-```http
-GET https://zcode.z.ai/api/v1/zcode-plan/billing/current
-Authorization: Bearer <JWT>
-```
-
-> ⚠️ **注意**: 该端点需要 ZCode 桌面客户端设置的完整请求头（含 `X-Platform`、`X-ZCode-App-Version` 等）才能通过认证，纯 API 方式可能返回 401。
-
-### 9.4 直接测试 AI API
-
-```bash
-curl -s -X POST "https://api.z.ai/api/anthropic/v1/messages" \
-  -H "x-api-key: <JWT>" \
-  -H "Content-Type: application/json" \
-  -H "anthropic-version: 2023-06-01" \
-  -H "User-Agent: ZCode/unknown" \
-  -d '{
-    "model": "glm-5.1",
-    "max_tokens": 10,
-    "stream": false,
-    "messages": [{"role": "user", "content": "hello"}]
-  }'
+```mermaid
+flowchart LR
+    A["x-api-key: JWT"] --> B["POST /api/anthropic/v1/messages"]
+    B --> C{"服务器响应"}
+    C -->|HTTP 200| D["✅ AI 可用"]
+    C -->|HTTP 429| E["❌ 余额不足<br/>无可用资源包"]
+    C -->|HTTP 401| F["❌ JWT 无效"]
 ```
 
 **无可用套餐时返回:**
@@ -425,7 +460,7 @@ curl -s -X POST "https://api.z.ai/api/anthropic/v1/messages" \
     "error": {
         "type": "rate_limit_error",
         "code": "1113",
-        "message": "[1113][Insufficient balance or no resource package. Please recharge.]"
+        "message": "[1113][Insufficient balance or no resource package.]"
     }
 }
 ```
@@ -433,8 +468,6 @@ curl -s -X POST "https://api.z.ai/api/anthropic/v1/messages" \
 ---
 
 ## 10. 完整 curl 命令链
-
-以下是从头到尾的完整命令链（假设已有 `code` 和 `state`）：
 
 ```bash
 #!/bin/bash
@@ -493,38 +526,34 @@ curl -s -X POST "https://api.z.ai/api/anthropic/v1/messages" \
 
 ## 11. 常见问题
 
-### 11.1 "当前用户不存在coding plan"
+### 11.1 错误排查流程图
 
-**原因**: 账号没有 Coding Plan（付费套餐），且没有激活 Start Plan（免费套餐）。
+```mermaid
+flowchart TB
+    P["出现问题"] --> Q1{"HTTP 500<br/>code=2007?"}
+    Q1 -->|是| A1["授权码过期<br/>→ 重新授权"]
+    Q1 -->|否| Q2{"HTTP 401<br/>空 body"}
 
-**解决方法**:
-- 如果已有 ZCode 桌面客户端：登录后自动激活 Start Plan
-- 如果没有：下载 ZCode 桌面 App → 登录 → 激活 Start Plan
-- Start Plan 无需绑定信用卡，登录即送
+    Q2 -->|是| A2["WAF 拦截 / 认证失败<br/>→ 检查 Authorization 头<br/>→ 使用桌面端请求头"]
+    Q2 -->|否| Q3{"code=500<br/>不存在coding plan"}
 
-### 11.2 "Insufficient balance or no resource package" (HTTP 429)
+    Q3 -->|是| A3["无付费套餐<br/>→ 检查 Start Plan 是否激活"]
+    Q3 -->|否| Q4{"HTTP 429<br/>余额不足"}
 
-**原因**: JWT 认证通过了，但没有可用的资源包（Start Plan 未激活 或 Coding Plan 未购买）。
+    Q4 -->|是| A4["无可用资源包<br/>→ 激活 Start Plan<br/>→ 购买 Coding Plan"]
+    Q4 -->|否| Q5{"state 不匹配"}
+    Q5 -->|是| A5["CSRF 防护触发<br/>→ 重新生成 state"]
+```
 
-### 11.3 授权码过期
+### 11.2 常见错误与解决
 
-**错误**: `HTTP 500 {"code":2007,"msg":"http error"}`
-
-**原因**: OAuth 授权码有效期很短（1-5 分钟），拿到 code 后需立即进行 Token 交换。
-
-**解决**: 重新生成授权链接 → 重新授权 → 立即处理。
-
-### 11.4 State 不匹配
-
-**原因**: CSRF 防护触发，回调中的 `state` 与发送的不一致。
-
-### 11.5 401 Unauthorized from zcode.z.ai billing endpoint
-
-**原因**: `zcode.z.ai` 的 `/api/v1/zcode-plan/billing/current` 端点需要 ZCode 桌面客户端特有的请求头才能认证。
-
-### 11.6 Start Plan 无法通过纯 API 激活
-
-Start Plan 需要在 ZCode 桌面客户端中登录后自动激活，目前不存在公开的 API 端点可远程激活 Start Plan。
+| 错误 | 原因 | 解决 |
+|------|------|------|
+| `HTTP 500 code=2007` | 授权码过期 | 重新生成授权链接 → 重新授权 |
+| `HTTP 401 空 body` | WAF 拦截 / 认证失败 | 检查请求头，使用桌面端环境 |
+| `code=500 不存在coding plan` | 无 Coding Plan | 检查 Start Plan 是否激活 |
+| `HTTP 429 余额不足` | 无可用资源包 | 激活 Start Plan 或购买套餐 |
+| `State mismatch` | CSRF 防护 | 重新生成 state |
 
 ---
 
@@ -553,32 +582,29 @@ python zcode_auth.py refresh
 
 ---
 
-## 附录: 所有已发现的 API 端点
+## 附录: API 端点一览
 
-### 认证相关
+```mermaid
+graph TB
+    subgraph Auth["认证端点"]
+        A1["chat.z.ai/api/oauth/authorize"]
+        A2["zcode.z.ai/api/v1/oauth/token"]
+        A3["api.z.ai/api/auth/z/login"]
+        A4["chat.z.ai/api/oauth/userinfo"]
+    end
 
-| 端点 | 用途 | 方法 |
-|------|------|------|
-| `https://chat.z.ai/api/oauth/authorize` | OAuth 授权 | GET |
-| `https://zcode.z.ai/api/v1/oauth/token` | Token 交换 | POST |
-| `https://api.z.ai/api/auth/z/login` | Business Token 交换 | POST |
-| `https://chat.z.ai/api/oauth/userinfo` | 用户信息 | GET |
+    subgraph Billing["计费端点"]
+        B1["zcode.z.ai/api/v1/zcode-plan/billing/current"]
+        B2["zcode.z.ai/api/v1/zcode-plan/billing/balance"]
+        B3["api.z.ai/api/biz/subscription/list"]
+        B4["api.z.ai/api/monitor/usage/quota/limit"]
+    end
 
-### 套餐/计费相关
-
-| 端点 | 用途 | 认证方式 |
-|------|------|---------|
-| `https://api.z.ai/api/biz/subscription/list` | 订阅列表 | Bearer JWT |
-| `https://api.z.ai/api/monitor/usage/quota/limit` | 使用配额 | Bearer JWT |
-| `https://zcode.z.ai/api/v1/zcode-plan/billing/current` | Start Plan 账单 | Bearer JWT（需要桌面请求头） |
-| `https://zcode.z.ai/api/v1/zcode-plan/billing/balance` | Start Plan 余额 | Bearer JWT（需要桌面请求头） |
-
-### API 调用
-
-| 端点 | 用途 | 认证方式 |
-|------|------|---------|
-| `https://api.z.ai/api/anthropic/v1/messages` | AI 对话 (Anthropic 格式) | x-api-key JWT |
-| `https://open.bigmodel.cn/api/anthropic/v1/messages` | AI 对话 (BigModel) | x-api-key API Key |
+    subgraph AI["AI 端点"]
+        C1["api.z.ai/api/anthropic/v1/messages"]
+        C2["open.bigmodel.cn/api/anthropic/v1/messages"]
+    end
+```
 
 ---
 
@@ -592,9 +618,6 @@ python zcode_auth.py refresh
 | 用户信息获取 | ✅ 确认 | 获取到真实用户 CC11001100 |
 | JWT Payload 结构 | ✅ 确认 | 解码验证 |
 | Coding Plan 订阅 API | ✅ 确认 | 返回空数组（未订阅） |
-| Start Plan 配额信息 | ❌ 未验证 | 需要 ZCode 桌面客户端环境 |
 | AI API 调用 | ✅ 确认 | 返回 429（余额不足），认证通过 |
-
----
 
 > 更多详细信息请见项目分析报告: [ANALYSIS_REPORT.md](ANALYSIS_REPORT.md)
