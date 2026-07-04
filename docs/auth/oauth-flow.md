@@ -620,4 +620,4 @@ graph TB
 | Coding Plan 订阅 API | ✅ 确认 | 返回空数组（未订阅） |
 | AI API 调用 | ✅ 确认 | 返回 429（余额不足），认证通过 |
 
-> 更多详细信息请见项目分析报告: [ANALYSIS_REPORT.md](ANALYSIS_REPORT.md)
+> 更多详细信息请见项目分析报告: [/reference/analysis-report](/reference/analysis-report)

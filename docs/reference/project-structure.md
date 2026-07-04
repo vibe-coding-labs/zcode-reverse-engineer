@@ -12,7 +12,7 @@
 │   ├── index.md                 # 首页
 │   ├── auth-flow.md             # OAuth 授权流程文档
 │   ├── activation-protocol.md   # Start Plan 激活协议文档
-│   ├── ANALYSIS_REPORT.md       # 完整逆向分析报告 (symlink)
+│   ├── /reference/analysis-report       # 完整逆向分析报告 (symlink)
 │   └── reference/               # 参考资料
 │       ├── api-endpoints.md     # API 端点目录
 │       ├── model-catalog.md     # 模型目录
@@ -36,7 +36,7 @@
 ├── zcode_auth.py                # Python OAuth 自动化脚本
 ├── mkdocs.yml                   # MkDocs 配置
 ├── README.md                    # 项目说明
-├── ANALYSIS_REPORT.md           # 完整逆向分析报告
+├── /reference/analysis-report           # 完整逆向分析报告
 ├── package.json                 # Node.js 依赖
 └── .gitignore                   # Git 忽略规则
 ```

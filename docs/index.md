@@ -122,7 +122,7 @@ graph TB
         CodingPlan --> [*]: 续费失败
     ```
 
-    [:octicons-arrow-right-24: 查看文档](reference/billing.md)
+    [:octicons-arrow-right-24: 查看文档](/models/billing.md)
 
 </div>
 
@@ -173,7 +173,7 @@ pie title 分析完成度
 | [OAuth 授权流程](auth-flow.md) | 完整 OAuth 流程 + curl 命令 | 开发者 |
 | [ACP 代理运行时](acp-proxy.md) | Agent 通信协议、动态路由 | 架构师 |
 | [AI 通信协议](ai-protocol.md) | API 调用格式、认证方式 | 开发者 |
-| [计费与订阅](reference/billing.md) | 套餐体系、配额结构 | 产品/运营 |
+| [计费与订阅](/models/billing.md) | 套餐体系、配额结构 | 产品/运营 |
 | [API 端点目录](reference/api-endpoints.md) | 完整 API 清单 | 所有角色 |
 
 ---

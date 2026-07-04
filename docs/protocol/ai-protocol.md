@@ -254,4 +254,4 @@ ZCode 预配置了 21 个 AI 模型，按提供商分组：
 
 ### 完整列表
 
-[:octicons-arrow-right-24: 查看完整模型目录](reference/model-catalog.md)
+[:octicons-arrow-right-24: 查看完整模型目录](/models/catalog)
