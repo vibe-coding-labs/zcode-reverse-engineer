@@ -4,6 +4,44 @@
 
 ---
 
+## 端点拓扑图
+
+```mermaid
+graph TB
+    subgraph Auth["认证端点 (chat.z.ai / zcode.z.ai)"]
+        A1["GET /api/oauth/authorize<br/>OAuth 授权"]
+        A2["POST /api/v1/oauth/token<br/>Token 交换"]
+        A3["GET /api/oauth/userinfo<br/>用户信息"]
+    end
+
+    subgraph Business["业务认证 (api.z.ai)"]
+        B1["POST /api/auth/z/login<br/>Business JWT"]
+    end
+
+    subgraph Billing["计费端点"]
+        C1["GET /api/v1/zcode-plan/billing/current<br/>Start Plan 账单 ⚠️ WAF"]
+        C2["GET /api/v1/zcode-plan/billing/balance<br/>Start Plan 余额 ⚠️ WAF"]
+        C3["GET /api/biz/subscription/list<br/>Coding Plan 订阅"]
+        C4["GET /api/monitor/usage/quota/limit<br/>使用配额"]
+    end
+
+    subgraph AI["AI 端点"]
+        D1["POST /api/anthropic/v1/messages<br/>Z.AI Anthropic API"]
+        D2["POST /open.bigmodel.cn/api/anthropic/v1/messages<br/>BigModel Anthropic API"]
+    end
+
+    subgraph Config["配置端点"]
+        E1["GET /api/v1/client/configs<br/>客户端配置"]
+    end
+
+    A1 --> A2
+    A2 --> B1
+    B1 --> C1
+    B1 --> C3
+    B1 --> D1
+    B1 --> D2
+```
+
 ## 认证相关
 
 | 端点 | 用途 | 方法 | 认证方式 |
