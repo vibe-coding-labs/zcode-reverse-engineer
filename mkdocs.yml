@@ -1,0 +1,76 @@
+site_name: ZCode Reverse Engineer
+site_description: "ZCode AI 编程助手通信协议逆向分析文档"
+site_url: https://vibe-coding-labs.github.io/zcode-reverse-engineer/
+repo_url: https://github.com/vibe-coding-labs/zcode-reverse-engineer
+repo_name: vibe-coding-labs/zcode-reverse-engineer
+edit_uri: blob/main/docs/
+
+theme:
+  name: material
+  language: zh
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: 切换暗色模式
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: 切换亮色模式
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - toc:
+      permalink: true
+  - tables
+  - footnotes
+  - attr_list
+  - md_in_html
+
+plugins:
+  - search
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/vibe-coding-labs/zcode-reverse-engineer
+  generator: false
+
+copyright: Copyright &copy; 2026 Vibe Coding Labs
+
+nav:
+  - 首页: index.md
+  - 分析报告:
+    - 完整分析报告: ANALYSIS_REPORT.md
+  - 授权协议:
+    - OAuth 授权流程: auth-flow.md
+    - Start Plan 激活协议: activation-protocol.md
+  - 参考资料:
+    - API 端点目录: reference/api-endpoints.md
+    - 模型目录: reference/model-catalog.md
+    - 项目结构: reference/project-structure.md

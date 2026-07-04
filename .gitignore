@@ -6,3 +6,4 @@ data/
 .zcode_credentials.json
 *.log
 .env
+site/
