@@ -227,3 +227,62 @@ function getCoalesceKey(event) {
     }
 }
 ```
+
+## Gateway 认证流程
+
+ACP Agent 支持通过自定义 Gateway 进行认证：
+
+```mermaid
+sequenceDiagram
+    participant Agent as ACP Agent
+    participant Client as 客户端
+    participant Gateway as Custom Gateway
+
+    Client->>Agent: clientCapabilities.auth._meta.gateway = true
+    Agent->>Client: 支持 Gateway 认证
+    Client->>Agent: authMethods: [{ id: "gateway" }]
+    Agent->>Agent: 配置 ANTHROPIC_BASE_URL = gateway.baseUrl
+    Agent->>Gateway: API 请求（通过 Gateway）
+    Gateway-->>Agent: 响应
+```
+
+```javascript
+// source: acp-agent.js
+const supportsGatewayAuth = request.clientCapabilities?.auth?._meta?.gateway === true;
+
+const gatewayAuthMethod = {
+    id: "gateway",
+    name: "Custom model gateway",
+    description: "Use a custom gateway to authenticate and access models",
+    _meta: { gateway: { protocol: "anthropic" } }
+};
+```
+
+## 终端认证与远程检测
+
+```javascript
+// 终端认证支持
+const supportsTerminalAuth = request.clientCapabilities?.auth?.terminal === true;
+const terminalAuthMethods = [];
+
+// 远程环境检测
+const isRemote = !!(process.env.NO_BROWSER ||
+    process.env.SSH_CONNECTION ||
+    process.env.SSH_CLIENT);
+
+// Bypass 机制（仅在 sandbox 环境）
+const ALLOW_BYPASS = !IS_ROOT || !!process.env.IS_SANDBOX;
+
+// 隐藏 Claude Auth
+const shouldHideClaudeAuth = process.argv.includes("--hide-claude-auth");
+```
+
+### ACP 环境变量
+
+| 变量 | 说明 |
+|------|------|
+| `CLAUDE_CONFIG_DIR` | Claude 配置目录，默认 `~/.claude` |
+| `CLAUDE_AGENT_ACP_IS_SINGLE_FILE_BUN` | 静态二进制标志 |
+| `IS_SANDBOX` | Sandbox 环境标志 |
+| `NO_BROWSER` | 无浏览器模式 |
+| `SSH_CONNECTION` / `SSH_CLIENT` | SSH 远程连接检测 |
