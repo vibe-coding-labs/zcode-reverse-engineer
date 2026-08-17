@@ -60,18 +60,20 @@ async function getClientConfigs() {
 
 ## Start Plan 免费额度（真实数字！）
 
+### 实时验证（2026-08-18）
+
+> 直接请求 `GET https://zcode.z.ai/api/v1/client/configs?app_version=3.0.1`（**无需任何认证**），返回的 `data.configs.startPlanPreview` 即为免费额度配置。此接口公开可访问，无论账号登录与否返回一致的权益。
+
 ### 响应
 
 ```json
 {
-    "planId": "zcode-v3-start-plan",
-    "name": "Start Plan",
     "entitlements": [
         {
             "grantUnits": 3000000,
             "meter": "model_usage",
             "period": "daily",
-            "showName": "GLM-5.2",
+            "showName": "GLM-5.3",
             "unitType": "token"
         },
         {
@@ -81,7 +83,9 @@ async function getClientConfigs() {
             "showName": "GLM-5-Turbo",
             "unitType": "token"
         }
-    ]
+    ],
+    "name": "Start Plan",
+    "planId": "zcode-v3-start-plan"
 }
 ```
 
@@ -89,10 +93,18 @@ async function getClientConfigs() {
 
 | 模型 | 每日额度 | 周期 | 单位 |
 |------|----------|------|------|
-| **GLM-5.2** (≈ Opus 级别) | **3,000,000 tokens** | 每日 | token |
+| **GLM-5.3**（旗舰，2026-08 时点官方已将免费档从 GLM-5.2 升级为 5.3） | **3,000,000 tokens** | 每日 | token |
 | **GLM-5-Turbo** (≈ Sonnet 级别) | **2,000,000 tokens** | 每日 | token |
 
 > 每日 3M + 2M token，两模型独立计算，每日重置。不是之前猜测的"5 小时 prompt 池"。
+> 注意：免费档 `showName` 官方可随时调整（2026-06 分析时为 GLM-5.2，2026-08-18 实测已为 GLM-5.3），`grantUnits` 数字保持不变。
+
+### 账号实际权益验证（需登录 JWT）
+
+- `GET https://api.z.ai/api/biz/subscription/list`（Bearer JWT）→ 返回 `{"code":200,"data":[]}`，即无付费订阅时 `data` 为空数组，免费用户即该状态。
+- `GET https://api.z.ai/api/monitor/usage/quota/limit` → 免费无 coding plan 时会返回 `{"code":500,"msg":"当前用户不存在coding plan"}`。（注意：zcode.z.ai 路径的 `billing/current` 若 JWT 过期会返回 401，不代表免费额度不存在——免费额度是**服务器按账号在模型调用时自动授予**，不体现在此接口。）
+
+> 结论：**免费额度是真实存在且公开可验证的**——`startPlanPreview` 无需登录即可从官方 API 拉到每日 3M + 2M token 的配置；登录后真正调用时才从服务器侧扣减。
 
 ---
 
