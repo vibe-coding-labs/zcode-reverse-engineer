@@ -20,7 +20,6 @@ export default defineConfig({
         items: [
           { text: 'OAuth 授权流程', link: '/auth/oauth-flow' },
           { text: 'Start Plan 激活', link: '/auth/activation-protocol' },
-          { text: '凭据与安全', link: '/auth/credentials' },
         ],
       },
       {
@@ -30,7 +29,6 @@ export default defineConfig({
           { text: 'AI 通信协议', link: '/protocol/ai-protocol' },
           { text: 'ACP 代理运行时', link: '/protocol/acp-proxy' },
           { text: 'WebSocket 流式管道', link: '/protocol/websocket-pipeline' },
-          { text: '远程工作区', link: '/protocol/remote-workspace' },
           { text: 'Agent 运行时', link: '/protocol/agent-runtime' },
         ],
       },
@@ -38,6 +36,8 @@ export default defineConfig({
         text: '🗃️ 模型与计费',
         items: [
           { text: '模型目录', link: '/models/catalog' },
+          { text: '免费/Start Plan 额度', link: '/models/free-quota' },
+          { text: '客户端配置与 Start Plan', link: '/models/client-configs' },
           { text: '套餐与配额', link: '/models/billing' },
         ],
       },
@@ -67,8 +67,8 @@ export default defineConfig({
               link: '/auth/activation-protocol',
             },
             {
-              text: '凭据与安全',
-              link: '/auth/credentials',
+              text: 'WAF 拦截分析',
+              link: '/auth/activation-protocol#四waf-拦截分析',
             },
           ],
         },
@@ -85,25 +85,34 @@ export default defineConfig({
 
       '/protocol/': [
         {
-          text: '📡 通信协议',
+          text: '📡 核心协议',
           collapsed: false,
           items: [
-            {
-              text: '协议总览',
-              link: '/protocol/overview',
-            },
-            {
-              text: 'AI 通信协议',
-              link: '/protocol/ai-protocol',
-            },
-            {
-              text: 'ACP 代理运行时',
-              link: '/protocol/acp-proxy',
-            },
-            {
-              text: 'WebSocket 流式管道',
-              link: '/protocol/websocket-pipeline',
-            },
+            { text: '协议总览', link: '/protocol/overview' },
+            { text: 'AI 通信协议', link: '/protocol/ai-protocol' },
+            { text: 'ACP 代理运行时', link: '/protocol/acp-proxy' },
+            { text: 'WebSocket 流式管道', link: '/protocol/websocket-pipeline' },
+          ],
+        },
+        {
+          text: '🤖 Agent 子系统',
+          collapsed: false,
+          items: [
+            { text: 'Agent 运行时', link: '/protocol/agent-runtime' },
+            { text: 'Agent 设计深层细节', link: '/protocol/agent-design' },
+            { text: '上下文管理与消息历史', link: '/protocol/context-management' },
+            { text: '远程工作区', link: '/protocol/remote-workspace' },
+            { text: '本地工作区与快照', link: '/protocol/workspace-snapshot' },
+            { text: '权限模式', link: '/protocol/permission-model' },
+          ],
+        },
+        {
+          text: '🔌 集成子系统',
+          collapsed: true,
+          items: [
+            { text: '集成总览', link: '/protocol/integration-subsystems' },
+            { text: 'WeChat Bot', link: '/protocol/wechat-bot' },
+            { text: '事件流订阅', link: '/protocol/event-subscription' },
           ],
         },
         {
@@ -112,6 +121,7 @@ export default defineConfig({
           items: [
             { text: 'API 端点', link: '/reference/api-endpoints' },
             { text: '模型目录', link: '/models/catalog' },
+            { text: '客户端配置与 Start Plan', link: '/models/client-configs' },
           ],
         },
       ],
@@ -121,14 +131,10 @@ export default defineConfig({
           text: '🗃️ 模型与计费',
           collapsed: false,
           items: [
-            {
-              text: '模型目录',
-              link: '/models/catalog',
-            },
-            {
-              text: '套餐与配额',
-              link: '/models/billing',
-            },
+            { text: '模型目录', link: '/models/catalog' },
+            { text: '免费/Start Plan 额度与鉴权', link: '/models/free-quota' },
+            { text: '客户端配置与 Start Plan 额度', link: '/models/client-configs' },
+            { text: '套餐与计费', link: '/models/billing' },
           ],
         },
       ],
@@ -138,18 +144,9 @@ export default defineConfig({
           text: '📖 参考资料',
           collapsed: false,
           items: [
-            {
-              text: 'API 端点目录',
-              link: '/reference/api-endpoints',
-            },
-            {
-              text: '项目结构',
-              link: '/reference/project-structure',
-            },
-            {
-              text: '完整分析报告',
-              link: '/reference/analysis-report',
-            },
+            { text: 'API 端点目录', link: '/reference/api-endpoints' },
+            { text: '项目结构', link: '/reference/project-structure' },
+            { text: '完整分析报告', link: '/reference/analysis-report' },
           ],
         },
       ],
@@ -218,17 +215,4 @@ export default defineConfig({
       dark: 'github-dark',
     },
   },
-
-  // ===== 清理 URL =====
-  cleanUrls: true,
-  ignoreDeadLinks: [/^.*$/,
-    /^#\d+-/,
-    /^\.\.\/ANALYSIS_REPORT/,
-    /\.md$/,
-    /\/auth-flow\b/,
-    /\/acp-proxy\b/,
-    /\/ai-protocol\b/,
-  ],
-
-  lastUpdated: true,
 })

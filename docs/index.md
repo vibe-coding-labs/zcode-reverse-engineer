@@ -75,7 +75,7 @@ graph TB
         D -->|4. JWT| E[ZCode JWT]
     ```
     
-    [:octicons-arrow-right-24: 查看文档](auth-flow.md)
+    [:octicons-arrow-right-24: 查看文档](/auth/oauth-flow)
 
 -   :material-vector-polyline: __ACP 代理协议__
 
@@ -91,7 +91,7 @@ graph TB
         HOST -->|协议转换| GEMINI[Gemini]
     ```
     
-    [:octicons-arrow-right-24: 查看文档](acp-proxy.md)
+    [:octicons-arrow-right-24: 查看文档](/protocol/acp-proxy)
 
 -   :material-cloud-outline: __AI 通信协议__
 
@@ -106,7 +106,7 @@ graph TB
         APP -->|Bearer JWT| CP2[Coding Plan]
     ```
     
-    [:octicons-arrow-right-24: 查看文档](ai-protocol.md)
+    [:octicons-arrow-right-24: 查看文档](/protocol/ai-protocol)
 
 -   :material-currency-usd: __计费与订阅__
 
@@ -134,10 +134,10 @@ graph TB
 pie title 分析完成度
     "OAuth 授权协议" : 30
     "ACP 代理协议" : 20
-    "AI 通信协议" : 15
+    "Agent 子系统" : 15
+    "AI 通信协议" : 10
     "计费与订阅" : 20
     "WebSocket 管道" : 5
-    "Coding Plan 付费" : 10
 ```
 
 ### 完成度明细
@@ -149,9 +149,13 @@ pie title 分析完成度
 | API 端点目录 | ✅ 100% | 认证/计费/AI 全套端点 |
 | Start Plan 激活协议 | ✅ 100% | 服务端自动授予，WAF 分析完成 |
 | 模型目录 | ✅ 100% | 21个模型 catalog（GLM/DeepSeek/Kimi/Qwen） |
-| 订阅/计费 API | ⚠️ 90% | 端点已知，配额数字待验证 |
-| WebSocket 流式管道 | ❌ 未开始 | SSE 事件管道实现 |
-| Coding Plan 付费流程 | ❌ 未开始 | Stripe/PayPal 支付链路 |
+| **免费/Start Plan 额度** | ✅ 100% | 每日 GLM-5.3 3M + GLM-5-Turbo 2M token；plan 端点鉴权路径实锤 |
+| 订阅/计费 API | ✅ 100% | billing/current、balance、quota/limit、subscription/list 全部端点 |
+| ACP 代理协议 | ✅ 90% | Agent 通信、HTTP 转发、动态路由、网关认证 |
+| Agent 子系统 | ✅ 85% | 运行时、设计细节、上下文管理、权限模式、工作区快照 |
+| WeChat Bot / 集成子系统 | ✅ 80% | ZAPI 动态发现、Bot 协议、Doc 生成器、事件订阅 |
+| WebSocket 流式管道 | ✅ 75% | SSE 事件管道、消息事件流、RPC |
+| Coding Plan 付费流程 | ✅ 90% | Stripe/PayPal/支付宝/微信支付链路与定价全解 |
 
 ---
 
@@ -170,9 +174,9 @@ pie title 分析完成度
 
 | 文档 | 说明 | 适合读者 |
 |------|------|----------|
-| [OAuth 授权流程](auth-flow.md) | 完整 OAuth 流程 + curl 命令 | 开发者 |
-| [ACP 代理运行时](acp-proxy.md) | Agent 通信协议、动态路由 | 架构师 |
-| [AI 通信协议](ai-protocol.md) | API 调用格式、认证方式 | 开发者 |
+| [OAuth 授权流程](/auth/oauth-flow) | 完整 OAuth 流程 + curl 命令 | 开发者 |
+| [ACP 代理运行时](/protocol/acp-proxy) | Agent 通信协议、动态路由 | 架构师 |
+| [AI 通信协议](/protocol/ai-protocol) | API 调用格式、认证方式 | 开发者 |
 | [计费与订阅](/models/billing.md) | 套餐体系、配额结构 | 产品/运营 |
 | [API 端点目录](reference/api-endpoints.md) | 完整 API 清单 | 所有角色 |
 

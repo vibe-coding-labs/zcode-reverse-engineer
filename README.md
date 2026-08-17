@@ -2,6 +2,13 @@
 
 **逆向分析 ZCode (https://zcode-ai.com/) AI 编程助手的通信协议，实现反向代理。**
 
+## 📚 文档网站
+
+完整的逆向分析文档（持续更新）以 VitePress 文档网站形式开源：
+
+- 🌐 **在线文档**: https://vibe-coding-labs.github.io/zcode-reverse-engineer/
+- 📖 覆盖：OAuth 授权、ACP 代理运行时、AI 通信协议、Agent 子系统、WebSocket 管道、模型与计费、免费额度、Coding Plan 付费流程
+
 ## 项目目标
 
 1. ✅ 从 NSIS 安装器 / AppImage 中提取 Electron ASAR 包
@@ -9,7 +16,18 @@
 3. ✅ 分析 OAuth 登录授权协议
 4. ✅ 分析 AI API 通信协议（Anthropic Messages API 格式）
 5. ✅ 分析 ACP (Agent Communication Protocol) 代理运行时
-6. ✅ **实现 MVP 验证逆向结果**
+6. ✅ 分析 Agent / WebSocket / 计费 / 订阅全套子协议
+7. ✅ **实现 MVP 验证逆向结果**
+
+## 核心发现速览
+
+| 主题 | 结论 |
+|------|------|
+| **免费/Start Plan 额度** | 每天 GLM-5.3 3M + GLM-5-Turbo 2M token，登录即送；公开配置 API 可验证 |
+| **免费额度鉴权路径** | 走 `zcode.z.ai/api/v1/zcode-plan/anthropic` + `Bearer JWT`，非 `api.z.ai` 的 x-api-key 通道 |
+| **OAuth 授权** | `code → access_token → business JWT` 三步，生产 app_id 已确认 |
+| **ACP 代理** | 动态路由、HTTP 转发、Anthropic/OpenAI/Gemini 格式互转 |
+| **付费 Coding Plan** | ¥18-1078/月 多档定价，Stripe/PayPal/支付宝/微信支付链路已解
 
 ## 核心发现
 
