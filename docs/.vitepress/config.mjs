@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
+  // GitHub Pages 部署在仓库子路径下: https://vibe-coding-labs.github.io/zcode-reverse-engineer/
+  // 必须设置 base,否则 CSS/JS 按根路径 /assets/* 加载 → 404 → 布局错乱
+  base: '/zcode-reverse-engineer/',
   title: 'ZCode RE',
   description: 'ZCode AI 编程助手通信协议逆向分析',
   lang: 'zh-CN',

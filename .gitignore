@@ -7,5 +7,6 @@ data/
 *.log
 .env
 site/
-.vitepress/
+/.vitepress/
 docs/.vitepress/cache/
+docs/.vitepress/dist/
